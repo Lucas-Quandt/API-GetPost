@@ -51,13 +51,23 @@ app.get('/produtos/:id', (request, response) => {
 // ROTA 2: POST /produtos -> Cadastrar um novo
 
 app.post('/produtos', (request, response) => {
-    const { nome, preco, descricao } = request.body;
+    let { nome, preco, descricao } = request.body;
+
+    if (typeof preco === 'string') {
+        preco = Number(preco.replace(',', '.'));
+    } else {
+        preco = Number(preco);
+    }
 
     // Validação básica: garante que os campos obrigatórios vieram preenchidos
     // antes de tocar no banco de dados.
-    if (!nome || preco === undefined || preco === null) {
+    if (!nome || preco === undefined || preco === null || isNaN(preco)) {
         response.status(400).json({ erro: 'Os campos "nome" e "preco" são obrigatórios' });
         return;
+    }
+
+    if (preco < 0) {
+        return response.status(400).json({ erro: 'O preço deve ser maior ou igual a zero' });
     }
 
     // Query parametrizada: os valores vindos do usuário (nome, preco, descricao)
@@ -70,7 +80,7 @@ app.post('/produtos', (request, response) => {
             response.status(500).json({ erro: 'Erro ao cadastrar produto' });
             return;
         }
-        response.json(resultado.rows[0]);
+        return response.status(201).send('Produto cadastrado com sucesso');
     });
 });
 
